@@ -1,29 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <springProfile name="local">
-        <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
-            <encoder>
-                <pattern>%d{HH:mm:ss.SSS} %-5level [%X{verificationId}] %logger{36} - %msg%n</pattern>
-            </encoder>
-        </appender>
-        <root level="INFO">
-            <appender-ref ref="CONSOLE"/>
-        </root>
-    </springProfile>
+    <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
+            <includeMdcKeyName>verificationId</includeMdcKeyName>
+            <includeMdcKeyName>query</includeMdcKeyName>
+            <includeMdcKeyName>source</includeMdcKeyName>
+            <customFields>{"app":"verification"}</customFields>
+        </encoder>
+    </appender>
 
-    <springProfile name="!local">
-        <appender name="JSON" class="ch.qos.logback.core.ConsoleAppender">
-            <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-                <includeMdcKeyName>verificationId</includeMdcKeyName>
-                <includeMdcKeyName>query</includeMdcKeyName>
-                <includeMdcKeyName>source</includeMdcKeyName>
-                <customFields>{"app":"verification"}</customFields>
-            </encoder>
-        </appender>
-        <root level="INFO">
-            <appender-ref ref="JSON"/>
-        </root>
-    </springProfile>
+    <root level="INFO">
+        <appender-ref ref="JSON"/>
+    </root>
 
 </configuration>
