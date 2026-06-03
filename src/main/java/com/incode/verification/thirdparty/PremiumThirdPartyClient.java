@@ -2,20 +2,21 @@ package com.incode.verification.thirdparty;
 
 import com.incode.verification.domain.Company;
 import com.incode.verification.domain.Source;
+import com.incode.verification.metrics.MetricsRecorder;
 import java.util.List;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientResponseException;
 
 @Component
 public class PremiumThirdPartyClient implements ThirdPartyClient {
 
     private final RestClient restClient;
+    private final MetricsRecorder metrics;
 
-    public PremiumThirdPartyClient(RestClient thirdPartyRestClient) {
+    public PremiumThirdPartyClient(RestClient thirdPartyRestClient, MetricsRecorder metrics) {
         this.restClient = thirdPartyRestClient;
+        this.metrics = metrics;
     }
 
     @Override
@@ -25,7 +26,7 @@ public class PremiumThirdPartyClient implements ThirdPartyClient {
 
     @Override
     public ThirdPartyResult search(String query) {
-        try {
+        return ThirdPartyCall.measured(metrics, Source.PREMIUM, () -> {
             List<PremiumCompany> body = restClient
                     .get()
                     .uri(uriBuilder -> uriBuilder
@@ -38,12 +39,7 @@ public class PremiumThirdPartyClient implements ThirdPartyClient {
                     ? List.of()
                     : body.stream().map(PremiumCompany::toCompany).toList();
             return ThirdPartyResult.available(companies);
-        } catch (RestClientResponseException exception) {
-            if (exception.getStatusCode().isSameCodeAs(HttpStatus.SERVICE_UNAVAILABLE)) {
-                return ThirdPartyResult.unavailable();
-            }
-            throw exception;
-        }
+        });
     }
 
     private record PremiumCompany(

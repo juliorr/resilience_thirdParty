@@ -3,20 +3,21 @@ package com.incode.verification.thirdparty;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.incode.verification.domain.Company;
 import com.incode.verification.domain.Source;
+import com.incode.verification.metrics.MetricsRecorder;
 import java.util.List;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientResponseException;
 
 @Component
 public class FreeThirdPartyClient implements ThirdPartyClient {
 
     private final RestClient restClient;
+    private final MetricsRecorder metrics;
 
-    public FreeThirdPartyClient(RestClient thirdPartyRestClient) {
+    public FreeThirdPartyClient(RestClient thirdPartyRestClient, MetricsRecorder metrics) {
         this.restClient = thirdPartyRestClient;
+        this.metrics = metrics;
     }
 
     @Override
@@ -26,7 +27,7 @@ public class FreeThirdPartyClient implements ThirdPartyClient {
 
     @Override
     public ThirdPartyResult search(String query) {
-        try {
+        return ThirdPartyCall.measured(metrics, Source.FREE, () -> {
             List<FreeCompany> body = restClient
                     .get()
                     .uri(uriBuilder -> uriBuilder
@@ -39,12 +40,7 @@ public class FreeThirdPartyClient implements ThirdPartyClient {
                     ? List.of()
                     : body.stream().map(FreeCompany::toCompany).toList();
             return ThirdPartyResult.available(companies);
-        } catch (RestClientResponseException exception) {
-            if (exception.getStatusCode().isSameCodeAs(HttpStatus.SERVICE_UNAVAILABLE)) {
-                return ThirdPartyResult.unavailable();
-            }
-            throw exception;
-        }
+        });
     }
 
     private record FreeCompany(

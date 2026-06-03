@@ -12,6 +12,7 @@ import com.incode.verification.domain.VerificationRecord;
 import com.incode.verification.domain.VerificationResult.Match;
 import com.incode.verification.domain.VerificationResult.NoResults;
 import com.incode.verification.domain.VerificationResult.ThirdPartiesDown;
+import com.incode.verification.metrics.MetricsRecorder;
 import com.incode.verification.persistence.VerificationRepository;
 import com.incode.verification.thirdparty.FreeThirdPartyClient;
 import com.incode.verification.thirdparty.PremiumThirdPartyClient;
@@ -37,6 +38,9 @@ class VerificationServiceTest {
     @Mock
     private VerificationRepository repository;
 
+    @Mock
+    private MetricsRecorder metrics;
+
     private VerificationService service;
 
     private static Company active(String cin) {
@@ -49,7 +53,7 @@ class VerificationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new VerificationService(freeClient, premiumClient, repository);
+        service = new VerificationService(freeClient, premiumClient, repository, metrics);
     }
 
     @Test
