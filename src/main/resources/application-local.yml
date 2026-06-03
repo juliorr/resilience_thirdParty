@@ -1,0 +1,13 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+
+app:
+  security:
+    mode: basic
+  dynamodb:
+    endpoint: http://localhost:8000
+    region: us-east-1
+    access-key: local
+    secret-key: local

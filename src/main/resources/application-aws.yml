@@ -1,0 +1,19 @@
+spring:
+  config:
+    activate:
+      on-profile: aws
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OAUTH2_ISSUER_URI}
+
+app:
+  security:
+    mode: jwt
+  persistence:
+    table-name: ${VERIFICATION_TABLE_NAME:verification}
+    create-table-on-startup: false
+  dynamodb:
+    endpoint: ${DYNAMODB_ENDPOINT:}
+    region: ${AWS_REGION:us-east-1}
