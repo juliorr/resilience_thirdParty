@@ -36,6 +36,9 @@ jobs:
   deploy:
     name: Build image & deploy to ECS
     needs: test
+    # Skipped until AWS is configured. To enable: set repo variable DEPLOY_ENABLED=true
+    # (and apply the Terraform in infra/envs/prod so the role + AWS_DEPLOY_ROLE_ARN secret exist).
+    if: vars.DEPLOY_ENABLED == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
