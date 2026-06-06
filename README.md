@@ -10,8 +10,6 @@ Built with **Java 21 + Spring Boot 3.5 + Maven**, persisted in **DynamoDB**, ful
 **Prometheus + Grafana + Loki**, and deployable to **AWS ECS Fargate** via **Terraform + GitHub
 Actions**.
 
-> Design rationale and trade-offs live in [`doc/plans/`](doc/plans/) (`00`–`04`).
-
 ## Endpoints
 
 | Endpoint | Auth (role) | Purpose |
@@ -113,8 +111,7 @@ expose the Engine API. On Linux/CI, `mvn verify` against the native socket works
 `infra/` holds Terraform (modules: `network`, `ecr`, `dynamodb`, `config`, `observability`, `ecs`).
 `infra/envs/prod` wires them into an ECS Fargate service behind an ALB, with DynamoDB accessed via an
 IAM task role. `.github/workflows/deploy.yml` runs `mvn verify` as a gate, then builds/pushes the
-image to ECR (tag = commit SHA) and performs a rolling ECS deploy. See
-[`doc/plans/03-aws-deployment.md`](doc/plans/03-aws-deployment.md).
+image to ECR (tag = commit SHA) and performs a rolling ECS deploy.
 
 The third-party provider is treated as an **external API**: it is not part of this IaC. In AWS,
 `verification-service` reaches it through the `third_party_base_url` variable, injected into the task
