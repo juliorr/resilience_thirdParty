@@ -10,29 +10,6 @@ Built with **Java 21 + Spring Boot 3.5 + Maven**, persisted in **DynamoDB**, ful
 **Prometheus + Grafana + Loki**, and deployable to **AWS ECS Fargate** via **Terraform + GitHub
 Actions**.
 
-## Endpoints
-
-| Endpoint | Auth (role) | Purpose |
-|----------|-------------|---------|
-| `GET /backend-service?verificationId=<guid>&query=<text>` | `VERIFIER` / `ADMIN` | Run a verification, persist it |
-| `GET /verifications/{verificationId}` | `AUDITOR` / `ADMIN` | Retrieve a persisted verification |
-| `GET /free-third-party?query=<text>` | open | FREE mock (snake_case, ~40% `503`) |
-| `GET /premium-third-party?query=<text>` | open | PREMIUM mock (camelCase, ~10% `503`) |
-| `GET /actuator/health` `/prometheus` `/metrics` | open | Health & metrics |
-| `GET /swagger-ui.html` `/v3/api-docs` | open | OpenAPI docs |
-
-### Orchestration (`/backend-service`)
-
-1. Call **FREE** first. If it returns `503` **or no results**, fall back to **PREMIUM** (single
-   attempt, no retry — retrying would mask the fallback).
-2. From the chosen source, return the **first `active` company**; never an inactive one.
-3. Extra active matches go in `otherResults`.
-4. `result` is the matched company, a `NO_RESULTS` indicator, or a `THIRD_PARTIES_DOWN` indicator.
-
-Every call persists `{ verificationId, queryText, timestamp, result, source }`. Validation:
-`400` for missing/blank `query`/`verificationId` or a non-GUID id; `409` if the `verificationId`
-already exists (idempotency key, single use); `404` on unknown retrieval.
-
 ## Quick start (≈2 minutes)
 
 Requires **Docker** only (no host JDK/Maven needed).
@@ -41,28 +18,14 @@ Requires **Docker** only (no host JDK/Maven needed).
 make up                 # build the image + start app, DynamoDB, Prometheus, Grafana, Loki, Promtail
 ```
 
-- App: <http://localhost:8080>
-- Swagger UI: <http://localhost:8080/swagger-ui.html>
-- Grafana: <http://localhost:3000> (anonymous admin)
-- Prometheus: <http://localhost:9090>
+- Swagger UI Backend: <http://localhost:8080/swagger-ui.html>
+- Swagger UI Third Party: <http://localhost:8081/swagger-ui.html>
+- Grafana: <http://localhost:3000/d/verification/verification-service?orgId=1&from=now-30m&to=now&timezone=browser&refresh=5s> (anonymous admin)
+- Prometheus: <http://localhost:9090/targets>
+- DynamoDB UI: http://localhost:8002/tables/verification
 
 > **Host port already in use?** Override any host port without touching the file, e.g.
 > `APP_HOST_PORT=18080 GRAFANA_HOST_PORT=13000 make up`. Container ports are unchanged.
-
-### Try it
-
-```bash
-# Local users (HTTP Basic): verifier/verifier-pass, auditor/auditor-pass, admin/admin-pass
-ID=$(uuidgen)
-
-# Run a verification (VERIFIER). Repeat a few times to observe FREE->PREMIUM fallback.
-curl -u verifier:verifier-pass "http://localhost:8080/backend-service?verificationId=$ID&query=CJ"
-
-# Retrieve it (AUDITOR) — shows the persisted source (FREE or PREMIUM)
-curl -u auditor:auditor-pass "http://localhost:8080/verifications/$ID"
-
-# Duplicate id -> 409 ; bad guid / blank query -> 400 ; unknown id -> 404
-```
 
 In **Grafana → Explore (Loki)**, trace a single verification:
 
@@ -86,18 +49,7 @@ Stop everything: `make down`.
 | `make lint` / `make lint-check` | Apply / verify Spotless (Palantir Java Format) |
 | `make docker-build` | Build the application image |
 | `make up` / `make down` / `make logs` | Manage the full stack |
-
-Tests run **two ways** (spec requirement): (a) inside the build via `mvn verify`, and
-(b) standalone via `make test` / `make it-test` / `make verify`.
-
-### Integration tests and the Docker socket
-
-Integration tests use **Testcontainers** to launch DynamoDB Local. Because they also run inside a
-container, `make it-test`/`make verify` start a **`docker:dind` sidecar** and point Testcontainers
-at it over TCP (`DOCKER_HOST=tcp://docker:2375`, `TESTCONTAINERS_HOST_OVERRIDE=docker`). This avoids
-the Docker Desktop for macOS limitation where bind-mounting the host socket into a container does not
-expose the Engine API. On Linux/CI, `mvn verify` against the native socket works directly; for
-**Podman**, point `DOCKER_HOST` at the Podman socket and set `TESTCONTAINERS_RYUK_DISABLED=true`.
+| `make newman` | Run the Postman collection with Newman in Docker (needs the stack up: `make up`) |
 
 ## Security
 
