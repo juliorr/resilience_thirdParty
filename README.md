@@ -116,10 +116,17 @@ IAM task role. `.github/workflows/deploy.yml` runs `mvn verify` as a gate, then 
 image to ECR (tag = commit SHA) and performs a rolling ECS deploy. See
 [`doc/plans/03-aws-deployment.md`](doc/plans/03-aws-deployment.md).
 
+The third-party provider is treated as an **external API**: it is not part of this IaC. In AWS,
+`verification-service` reaches it through the `third_party_base_url` variable, injected into the task
+as `APP_THIRD_PARTY_BASE_URL`. (Locally, `make up` still runs the bundled mock provider over the
+Docker network.)
+
 ```bash
 cd infra/envs/prod
 terraform init
-terraform plan -var oauth2_issuer_uri=<issuer>   # requires AWS credentials
+terraform plan \
+  -var oauth2_issuer_uri=<issuer> \
+  -var third_party_base_url=<provider-url>   # requires AWS credentials
 ```
 
 ## Project layout

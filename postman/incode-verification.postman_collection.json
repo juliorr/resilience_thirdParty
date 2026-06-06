@@ -1,0 +1,1350 @@
+{
+ "info": {
+  "name": "Incode Verification Service",
+  "description": "Test cases for the verification service, built from the seed data in third-party-service/src/main/resources/data. Covers the FREE and PREMIUM third-party mocks, the orchestrating /backend-service, verification retrieval, the create->retrieve->duplicate flow, and auth/validation errors. Import the 'Incode Verification - Local' environment and start the stack with 'make up' before running.",
+  "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+ },
+ "variable": [
+  {
+   "key": "baseUrl",
+   "value": "http://localhost:8080"
+  },
+  {
+   "key": "thirdPartyUrl",
+   "value": "http://localhost:8081"
+  },
+  {
+   "key": "vid",
+   "value": ""
+  },
+  {
+   "key": "flowId",
+   "value": ""
+  },
+  {
+   "key": "loopMax",
+   "value": "25"
+  },
+  {
+   "key": "fbId",
+   "value": ""
+  },
+  {
+   "key": "cId",
+   "value": ""
+  }
+ ],
+ "item": [
+  {
+   "name": "FREE third-party",
+   "description": "Public mock. snake_case payload. Returns 503 ~40% of the time by design, so tests accept both 200 and 503.",
+   "item": [
+    {
+     "name": "FREE - match by CIN (CJQUNXGW)",
+     "request": {
+      "method": "GET",
+      "url": {
+       "raw": "{{thirdPartyUrl}}/free-third-party?query=CJQUNXGW",
+       "host": [
+        "{{thirdPartyUrl}}"
+       ],
+       "path": [
+        "free-third-party"
+       ],
+       "query": [
+        {
+         "key": "query",
+         "value": "CJQUNXGW"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('status is 200 or 503 (FREE fails ~40%)', () => pm.expect([200, 503]).to.include(pm.response.code));",
+         "if (pm.response.code === 200) {",
+         "  const body = pm.response.json();",
+         "  pm.test('body is an array', () => pm.expect(body).to.be.an('array'));",
+         "  pm.test('contains CJQUNXGW with snake_case fields', () => {",
+         "    const hit = body.find(c => c.cin === 'CJQUNXGW');",
+         "    pm.expect(hit, 'CJQUNXGW present').to.be.an('object');",
+         "    pm.expect(hit).to.have.all.keys('cin', 'name', 'registration_date', 'address', 'is_active');",
+         "  });",
+         "}"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "FREE - substring (FI7)",
+     "request": {
+      "method": "GET",
+      "url": {
+       "raw": "{{thirdPartyUrl}}/free-third-party?query=FI7",
+       "host": [
+        "{{thirdPartyUrl}}"
+       ],
+       "path": [
+        "free-third-party"
+       ],
+       "query": [
+        {
+         "key": "query",
+         "value": "FI7"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('status is 200 or 503', () => pm.expect([200, 503]).to.include(pm.response.code));",
+         "if (pm.response.code === 200) {",
+         "  const body = pm.response.json();",
+         "  pm.test('every CIN contains the substring FI7', () => body.forEach(c => pm.expect(c.cin).to.include('FI7')));",
+         "  pm.test('FREE returns only FI75L0O9 (premium is the superset)', () => {",
+         "    pm.expect(body.map(c => c.cin)).to.include('FI75L0O9');",
+         "    pm.expect(body.map(c => c.cin)).to.not.include('FI7RM46P');",
+         "  });",
+         "}"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "FREE - no match (ZZZZZ)",
+     "request": {
+      "method": "GET",
+      "url": {
+       "raw": "{{thirdPartyUrl}}/free-third-party?query=ZZZZZ",
+       "host": [
+        "{{thirdPartyUrl}}"
+       ],
+       "path": [
+        "free-third-party"
+       ],
+       "query": [
+        {
+         "key": "query",
+         "value": "ZZZZZ"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('status is 200 or 503', () => pm.expect([200, 503]).to.include(pm.response.code));",
+         "if (pm.response.code === 200) {",
+         "  pm.test('empty array', () => pm.expect(pm.response.json()).to.be.an('array').that.is.empty);",
+         "}"
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "PREMIUM third-party",
+   "description": "Public mock. camelCase payload, fullAddress mapped to companyFullAddress. Returns 503 ~10% of the time by design.",
+   "item": [
+    {
+     "name": "PREMIUM - match by CIN (LDL93LOZ)",
+     "request": {
+      "method": "GET",
+      "url": {
+       "raw": "{{thirdPartyUrl}}/premium-third-party?query=LDL93LOZ",
+       "host": [
+        "{{thirdPartyUrl}}"
+       ],
+       "path": [
+        "premium-third-party"
+       ],
+       "query": [
+        {
+         "key": "query",
+         "value": "LDL93LOZ"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('status is 200 or 503 (PREMIUM fails ~10%)', () => pm.expect([200, 503]).to.include(pm.response.code));",
+         "if (pm.response.code === 200) {",
+         "  const body = pm.response.json();",
+         "  pm.test('contains LDL93LOZ (premium-only company) with camelCase fields', () => {",
+         "    const hit = body.find(c => c.companyIdentificationNumber === 'LDL93LOZ');",
+         "    pm.expect(hit, 'LDL93LOZ present').to.be.an('object');",
+         "    pm.expect(hit).to.have.all.keys('companyIdentificationNumber', 'companyName', 'registrationDate', 'companyFullAddress', 'isActive');",
+         "  });",
+         "}"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "PREMIUM - substring superset (FI7)",
+     "request": {
+      "method": "GET",
+      "url": {
+       "raw": "{{thirdPartyUrl}}/premium-third-party?query=FI7",
+       "host": [
+        "{{thirdPartyUrl}}"
+       ],
+       "path": [
+        "premium-third-party"
+       ],
+       "query": [
+        {
+         "key": "query",
+         "value": "FI7"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('status is 200 or 503', () => pm.expect([200, 503]).to.include(pm.response.code));",
+         "if (pm.response.code === 200) {",
+         "  const cins = pm.response.json().map(c => c.companyIdentificationNumber);",
+         "  pm.test('PREMIUM is the superset: returns FI75L0O9 and FI7RM46P', () => {",
+         "    pm.expect(cins).to.include('FI75L0O9');",
+         "    pm.expect(cins).to.include('FI7RM46P');",
+         "  });",
+         "}"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "PREMIUM - no match (ZZZZZ)",
+     "request": {
+      "method": "GET",
+      "url": {
+       "raw": "{{thirdPartyUrl}}/premium-third-party?query=ZZZZZ",
+       "host": [
+        "{{thirdPartyUrl}}"
+       ],
+       "path": [
+        "premium-third-party"
+       ],
+       "query": [
+        {
+         "key": "query",
+         "value": "ZZZZZ"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('status is 200 or 503', () => pm.expect([200, 503]).to.include(pm.response.code));",
+         "if (pm.response.code === 200) {",
+         "  pm.test('empty array', () => pm.expect(pm.response.json()).to.be.an('array').that.is.empty);",
+         "}"
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Backend service (happy paths)",
+   "description": "Orchestrating API: FREE first, fall back to PREMIUM, persist a record. Requires role VERIFIER or ADMIN. Always returns 200 (third-party 503s are absorbed by the orchestrator); the rare all-down case yields result.status THIRD_PARTIES_DOWN, which the assertions tolerate.",
+   "auth": {
+    "type": "basic",
+    "basic": [
+     {
+      "key": "username",
+      "value": "{{verifierUser}}"
+     },
+     {
+      "key": "password",
+      "value": "{{verifierPass}}"
+     }
+    ]
+   },
+   "event": [
+    {
+     "listen": "prerequest",
+     "script": {
+      "type": "text/javascript",
+      "exec": [
+       "pm.collectionVariables.set('vid', pm.variables.replaceIn('{{$guid}}'));"
+      ]
+     }
+    }
+   ],
+   "item": [
+    {
+     "name": "Verify - active in FREE and PREMIUM (CJQUNXGW)",
+     "request": {
+      "method": "GET",
+      "url": {
+       "raw": "{{baseUrl}}/backend-service?verificationId={{vid}}&query=CJQUNXGW",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "backend-service"
+       ],
+       "query": [
+        {
+         "key": "verificationId",
+         "value": "{{vid}}"
+        },
+        {
+         "key": "query",
+         "value": "CJQUNXGW"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('status is 200', () => pm.response.to.have.status(200));",
+         "const body = pm.response.json();",
+         "pm.test('echoes verificationId and query', () => {",
+         "  pm.expect(body.verificationId).to.eql(pm.collectionVariables.get('vid'));",
+         "  pm.expect(body.query).to.eql('CJQUNXGW');",
+         "});",
+         "pm.test('result is a match for CJQUNXGW (or THIRD_PARTIES_DOWN if both down)', () => {",
+         "  if (body.result && body.result.status) {",
+         "    pm.expect(body.result.status).to.eql('THIRD_PARTIES_DOWN');",
+         "  } else {",
+         "    pm.expect(body.result.cin).to.eql('CJQUNXGW');",
+         "    pm.expect(body.result.active).to.be.true;",
+         "  }",
+         "});"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Verify - FREE->PREMIUM fallback (LDL93LOZ)",
+     "request": {
+      "method": "GET",
+      "url": {
+       "raw": "{{baseUrl}}/backend-service?verificationId={{vid}}&query=LDL93LOZ",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "backend-service"
+       ],
+       "query": [
+        {
+         "key": "verificationId",
+         "value": "{{vid}}"
+        },
+        {
+         "key": "query",
+         "value": "LDL93LOZ"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('status is 200', () => pm.response.to.have.status(200));",
+         "const body = pm.response.json();",
+         "pm.test('LDL93LOZ exists only in PREMIUM: match comes from the fallback (unless down/PREMIUM 503)', () => {",
+         "  if (body.result && body.result.status) {",
+         "    pm.expect(body.result.status).to.be.oneOf(['NO_RESULTS', 'THIRD_PARTIES_DOWN']);",
+         "  } else {",
+         "    pm.expect(body.result.cin).to.eql('LDL93LOZ');",
+         "  }",
+         "});"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Verify - multiple active matches -> otherResults (Q)",
+     "request": {
+      "method": "GET",
+      "url": {
+       "raw": "{{baseUrl}}/backend-service?verificationId={{vid}}&query=Q",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "backend-service"
+       ],
+       "query": [
+        {
+         "key": "verificationId",
+         "value": "{{vid}}"
+        },
+        {
+         "key": "query",
+         "value": "Q"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('status is 200', () => pm.response.to.have.status(200));",
+         "const body = pm.response.json();",
+         "pm.test('first active match plus a non-empty otherResults array (unless both down)', () => {",
+         "  if (body.result && body.result.status) {",
+         "    pm.expect(body.result.status).to.eql('THIRD_PARTIES_DOWN');",
+         "  } else {",
+         "    pm.expect(body.result.active).to.be.true;",
+         "    pm.expect(body.otherResults).to.be.an('array').that.is.not.empty;",
+         "    pm.expect(body.otherResults.every(c => c.active)).to.be.true;",
+         "  }",
+         "});"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Verify - inactive only -> NO_RESULTS (0ANW1LCD)",
+     "request": {
+      "method": "GET",
+      "url": {
+       "raw": "{{baseUrl}}/backend-service?verificationId={{vid}}&query=0ANW1LCD",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "backend-service"
+       ],
+       "query": [
+        {
+         "key": "verificationId",
+         "value": "{{vid}}"
+        },
+        {
+         "key": "query",
+         "value": "0ANW1LCD"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('status is 200', () => pm.response.to.have.status(200));",
+         "const body = pm.response.json();",
+         "pm.test('inactive company -> NO_RESULTS (or THIRD_PARTIES_DOWN)', () => {",
+         "  pm.expect(body.result.status).to.be.oneOf(['NO_RESULTS', 'THIRD_PARTIES_DOWN']);",
+         "  pm.expect(body.otherResults).to.satisfy(o => o === undefined || o === null);",
+         "});"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "Verify - no match anywhere -> NO_RESULTS (ZZZZZ)",
+     "request": {
+      "method": "GET",
+      "url": {
+       "raw": "{{baseUrl}}/backend-service?verificationId={{vid}}&query=ZZZZZ",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "backend-service"
+       ],
+       "query": [
+        {
+         "key": "verificationId",
+         "value": "{{vid}}"
+        },
+        {
+         "key": "query",
+         "value": "ZZZZZ"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('status is 200', () => pm.response.to.have.status(200));",
+         "const body = pm.response.json();",
+         "pm.test('no match -> NO_RESULTS (or THIRD_PARTIES_DOWN)', () => {",
+         "  pm.expect(body.result.status).to.be.oneOf(['NO_RESULTS', 'THIRD_PARTIES_DOWN']);",
+         "});"
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Create -> retrieve -> duplicate (flow)",
+   "description": "Chained scenario using one captured verificationId. Run the folder top-to-bottom (Collection Runner does this automatically).",
+   "item": [
+    {
+     "name": "1. Create verification (verifier)",
+     "request": {
+      "method": "GET",
+      "auth": {
+       "type": "basic",
+       "basic": [
+        {
+         "key": "username",
+         "value": "{{verifierUser}}"
+        },
+        {
+         "key": "password",
+         "value": "{{verifierPass}}"
+        }
+       ]
+      },
+      "url": {
+       "raw": "{{baseUrl}}/backend-service?verificationId={{flowId}}&query=CJQUNXGW",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "backend-service"
+       ],
+       "query": [
+        {
+         "key": "verificationId",
+         "value": "{{flowId}}"
+        },
+        {
+         "key": "query",
+         "value": "CJQUNXGW"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "prerequest",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.collectionVariables.set('flowId', pm.variables.replaceIn('{{$guid}}'));"
+        ]
+       }
+      },
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('status is 200', () => pm.response.to.have.status(200));",
+         "pm.test('verificationId echoes the generated id', () => {",
+         "  pm.expect(pm.response.json().verificationId).to.eql(pm.collectionVariables.get('flowId'));",
+         "});"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "2. Retrieve by id (auditor)",
+     "request": {
+      "method": "GET",
+      "auth": {
+       "type": "basic",
+       "basic": [
+        {
+         "key": "username",
+         "value": "{{auditorUser}}"
+        },
+        {
+         "key": "password",
+         "value": "{{auditorPass}}"
+        }
+       ]
+      },
+      "url": {
+       "raw": "{{baseUrl}}/verifications/{{flowId}}",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "verifications",
+        "{{flowId}}"
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('status is 200', () => pm.response.to.have.status(200));",
+         "const body = pm.response.json();",
+         "pm.test('persisted record matches the created verification', () => {",
+         "  pm.expect(body.verificationId).to.eql(pm.collectionVariables.get('flowId'));",
+         "  pm.expect(body.queryText).to.eql('CJQUNXGW');",
+         "  pm.expect(body).to.have.property('timestamp');",
+         "  pm.expect(body.source).to.satisfy(s => s === 'FREE' || s === 'PREMIUM' || s === null || s === undefined);",
+         "});"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "3. Duplicate id is rejected (verifier)",
+     "request": {
+      "method": "GET",
+      "auth": {
+       "type": "basic",
+       "basic": [
+        {
+         "key": "username",
+         "value": "{{verifierUser}}"
+        },
+        {
+         "key": "password",
+         "value": "{{verifierPass}}"
+        }
+       ]
+      },
+      "url": {
+       "raw": "{{baseUrl}}/backend-service?verificationId={{flowId}}&query=CJQUNXGW",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "backend-service"
+       ],
+       "query": [
+        {
+         "key": "verificationId",
+         "value": "{{flowId}}"
+        },
+        {
+         "key": "query",
+         "value": "CJQUNXGW"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('reusing the verificationId returns 409 Conflict', () => pm.response.to.have.status(409));",
+         "pm.test('problem body reports the conflict', () => {",
+         "  const body = pm.response.json();",
+         "  pm.expect(body.status).to.eql(409);",
+         "  pm.expect(body.error).to.eql('Conflict');",
+         "});"
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "Auth & validation errors",
+   "description": "Negative cases covering authentication (401), authorization by role (403), validation (400), and not found (404).",
+   "item": [
+    {
+     "name": "401 - backend-service without credentials",
+     "request": {
+      "method": "GET",
+      "auth": {
+       "type": "noauth"
+      },
+      "url": {
+       "raw": "{{baseUrl}}/backend-service?verificationId={{$guid}}&query=CJQUNXGW",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "backend-service"
+       ],
+       "query": [
+        {
+         "key": "verificationId",
+         "value": "{{$guid}}"
+        },
+        {
+         "key": "query",
+         "value": "CJQUNXGW"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('missing credentials -> 401', () => pm.response.to.have.status(401));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "403 - backend-service with wrong role (auditor)",
+     "request": {
+      "method": "GET",
+      "auth": {
+       "type": "basic",
+       "basic": [
+        {
+         "key": "username",
+         "value": "{{auditorUser}}"
+        },
+        {
+         "key": "password",
+         "value": "{{auditorPass}}"
+        }
+       ]
+      },
+      "url": {
+       "raw": "{{baseUrl}}/backend-service?verificationId={{$guid}}&query=CJQUNXGW",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "backend-service"
+       ],
+       "query": [
+        {
+         "key": "verificationId",
+         "value": "{{$guid}}"
+        },
+        {
+         "key": "query",
+         "value": "CJQUNXGW"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('auditor cannot call backend-service -> 403', () => pm.response.to.have.status(403));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "403 - verifications with wrong role (verifier)",
+     "request": {
+      "method": "GET",
+      "auth": {
+       "type": "basic",
+       "basic": [
+        {
+         "key": "username",
+         "value": "{{verifierUser}}"
+        },
+        {
+         "key": "password",
+         "value": "{{verifierPass}}"
+        }
+       ]
+      },
+      "url": {
+       "raw": "{{baseUrl}}/verifications/{{$guid}}",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "verifications",
+        "{{$guid}}"
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('verifier cannot read verifications -> 403', () => pm.response.to.have.status(403));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "404 - verifications unknown id (auditor)",
+     "request": {
+      "method": "GET",
+      "auth": {
+       "type": "basic",
+       "basic": [
+        {
+         "key": "username",
+         "value": "{{auditorUser}}"
+        },
+        {
+         "key": "password",
+         "value": "{{auditorPass}}"
+        }
+       ]
+      },
+      "url": {
+       "raw": "{{baseUrl}}/verifications/{{$guid}}",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "verifications",
+        "{{$guid}}"
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('unknown id -> 404', () => pm.response.to.have.status(404));",
+         "pm.test('problem body reports not found', () => pm.expect(pm.response.json().status).to.eql(404));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "400 - backend-service invalid GUID (verifier)",
+     "request": {
+      "method": "GET",
+      "auth": {
+       "type": "basic",
+       "basic": [
+        {
+         "key": "username",
+         "value": "{{verifierUser}}"
+        },
+        {
+         "key": "password",
+         "value": "{{verifierPass}}"
+        }
+       ]
+      },
+      "url": {
+       "raw": "{{baseUrl}}/backend-service?verificationId=not-a-uuid&query=CJQUNXGW",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "backend-service"
+       ],
+       "query": [
+        {
+         "key": "verificationId",
+         "value": "not-a-uuid"
+        },
+        {
+         "key": "query",
+         "value": "CJQUNXGW"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('invalid GUID -> 400', () => pm.response.to.have.status(400));",
+         "pm.test('problem body reports bad request', () => pm.expect(pm.response.json().status).to.eql(400));"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "400 - backend-service missing query (verifier)",
+     "request": {
+      "method": "GET",
+      "auth": {
+       "type": "basic",
+       "basic": [
+        {
+         "key": "username",
+         "value": "{{verifierUser}}"
+        },
+        {
+         "key": "password",
+         "value": "{{verifierPass}}"
+        }
+       ]
+      },
+      "url": {
+       "raw": "{{baseUrl}}/backend-service?verificationId={{$guid}}",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "backend-service"
+       ],
+       "query": [
+        {
+         "key": "verificationId",
+         "value": "{{$guid}}"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('missing query param -> 400', () => pm.response.to.have.status(400));"
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "name": "503 & fallback (deep)",
+   "description": "Exercises the simulated 503 outages and the FREE->PREMIUM fallback explicitly. Block A is deterministic (no-results fallback, proves source=PREMIUM via retrieval). Blocks B and C use self-looping requests (pm.execution.setNextRequest) and ONLY work in the Collection Runner or Newman, not in a single Send. loopMax (collection variable, default 25) bounds the loops; with FREE at 40% the odds of not observing a 503 in 25 calls are ~3e-6.",
+   "item": [
+    {
+     "name": "A1. Fallback (no-results) -> create (LDL93LOZ)",
+     "request": {
+      "method": "GET",
+      "auth": {
+       "type": "basic",
+       "basic": [
+        {
+         "key": "username",
+         "value": "{{verifierUser}}"
+        },
+        {
+         "key": "password",
+         "value": "{{verifierPass}}"
+        }
+       ]
+      },
+      "url": {
+       "raw": "{{baseUrl}}/backend-service?verificationId={{fbId}}&query=LDL93LOZ",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "backend-service"
+       ],
+       "query": [
+        {
+         "key": "verificationId",
+         "value": "{{fbId}}"
+        },
+        {
+         "key": "query",
+         "value": "LDL93LOZ"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "prerequest",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.collectionVariables.set('fbId', pm.variables.replaceIn('{{$guid}}'));"
+        ]
+       }
+      },
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('status is 200', () => pm.response.to.have.status(200));",
+         "pm.test('echoes the generated verificationId', () => {",
+         "  pm.expect(pm.response.json().verificationId).to.eql(pm.collectionVariables.get('fbId'));",
+         "});"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "A2. Fallback (no-results) -> source is PREMIUM",
+     "request": {
+      "method": "GET",
+      "auth": {
+       "type": "basic",
+       "basic": [
+        {
+         "key": "username",
+         "value": "{{auditorUser}}"
+        },
+        {
+         "key": "password",
+         "value": "{{auditorPass}}"
+        }
+       ]
+      },
+      "url": {
+       "raw": "{{baseUrl}}/verifications/{{fbId}}",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "verifications",
+        "{{fbId}}"
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('status is 200', () => pm.response.to.have.status(200));",
+         "const body = pm.response.json();",
+         "pm.test('LDL93LOZ exists only in PREMIUM, so a match proves the FREE->PREMIUM fallback', () => {",
+         "  const result = body.result || {};",
+         "  if (result.cin === 'LDL93LOZ') {",
+         "    pm.expect(body.source, 'a LDL93LOZ match can only come from PREMIUM').to.eql('PREMIUM');",
+         "  } else {",
+         "    pm.expect(result.status, 'no match -> NO_RESULTS, or THIRD_PARTIES_DOWN if both providers were down').to.be.oneOf(['NO_RESULTS', 'THIRD_PARTIES_DOWN']);",
+         "  }",
+         "});"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "B1. FREE 503 observed within N calls (CJQUNXGW)",
+     "request": {
+      "method": "GET",
+      "auth": {
+       "type": "noauth"
+      },
+      "url": {
+       "raw": "{{thirdPartyUrl}}/free-third-party?query=CJQUNXGW",
+       "host": [
+        "{{thirdPartyUrl}}"
+       ],
+       "path": [
+        "free-third-party"
+       ],
+       "query": [
+        {
+         "key": "query",
+         "value": "CJQUNXGW"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "prerequest",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "if (pm.collectionVariables.get('b_i') === undefined) {",
+         "  pm.collectionVariables.set('b_i', 0);",
+         "  pm.collectionVariables.set('b_seen', false);",
+         "}"
+        ]
+       }
+      },
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "const i = Number(pm.collectionVariables.get('b_i')) + 1;",
+         "pm.collectionVariables.set('b_i', i);",
+         "const max = Number(pm.collectionVariables.get('loopMax')) || 25;",
+         "pm.test('status is 200 or 503 (FREE fails ~40%)', () => pm.expect([200, 503]).to.include(pm.response.code));",
+         "if (pm.response.code === 503) {",
+         "  pm.collectionVariables.set('b_seen', true);",
+         "  const body = pm.response.json();",
+         "  pm.test('503 body is a well-formed problem response', () => {",
+         "    pm.expect(body.status).to.eql(503);",
+         "    pm.expect(String(body.message || body.error || '')).to.match(/unavailable/i);",
+         "  });",
+         "}",
+         "const seen = pm.collectionVariables.get('b_seen') === true;",
+         "if (!seen && i < max) {",
+         "  pm.execution.setNextRequest('B1. FREE 503 observed within N calls (CJQUNXGW)');",
+         "} else {",
+         "  pm.test(`a FREE 503 was observed within ${i} call(s)`, () => pm.expect(seen, 'no 503 seen; raise loopMax or check app.failure.free-probability').to.be.true);",
+         "  pm.collectionVariables.unset('b_i');",
+         "  pm.collectionVariables.unset('b_seen');",
+         "}"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "C1. 503-fallback -> create (CJQUNXGW)",
+     "request": {
+      "method": "GET",
+      "auth": {
+       "type": "basic",
+       "basic": [
+        {
+         "key": "username",
+         "value": "{{verifierUser}}"
+        },
+        {
+         "key": "password",
+         "value": "{{verifierPass}}"
+        }
+       ]
+      },
+      "url": {
+       "raw": "{{baseUrl}}/backend-service?verificationId={{cId}}&query=CJQUNXGW",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "backend-service"
+       ],
+       "query": [
+        {
+         "key": "verificationId",
+         "value": "{{cId}}"
+        },
+        {
+         "key": "query",
+         "value": "CJQUNXGW"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "prerequest",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "if (pm.collectionVariables.get('c_i') === undefined) {",
+         "  pm.collectionVariables.set('c_i', 0);",
+         "  pm.collectionVariables.set('c_seen', false);",
+         "}",
+         "pm.collectionVariables.set('cId', pm.variables.replaceIn('{{$guid}}'));"
+        ]
+       }
+      },
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "pm.test('status is 200', () => pm.response.to.have.status(200));",
+         "pm.execution.setNextRequest('C2. 503-fallback -> inspect source');"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "C2. 503-fallback -> inspect source",
+     "request": {
+      "method": "GET",
+      "auth": {
+       "type": "basic",
+       "basic": [
+        {
+         "key": "username",
+         "value": "{{auditorUser}}"
+        },
+        {
+         "key": "password",
+         "value": "{{auditorPass}}"
+        }
+       ]
+      },
+      "url": {
+       "raw": "{{baseUrl}}/verifications/{{cId}}",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "verifications",
+        "{{cId}}"
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "const i = Number(pm.collectionVariables.get('c_i')) + 1;",
+         "pm.collectionVariables.set('c_i', i);",
+         "const max = Number(pm.collectionVariables.get('loopMax')) || 25;",
+         "pm.test('status is 200', () => pm.response.to.have.status(200));",
+         "const source = pm.response.json().source;",
+         "if (source === 'PREMIUM') {",
+         "  pm.collectionVariables.set('c_seen', true);",
+         "}",
+         "const seen = pm.collectionVariables.get('c_seen') === true;",
+         "if (!seen && i < max) {",
+         "  pm.execution.setNextRequest('C1. 503-fallback -> create (CJQUNXGW)');",
+         "} else {",
+         "  pm.test(`CJQUNXGW served by PREMIUM within ${i} attempt(s) -> proves a FREE 503 triggered the fallback`, () => pm.expect(seen, 'CJQUNXGW lives in both files, so source=PREMIUM can only happen after a FREE 503; raise loopMax if not observed').to.be.true);",
+         "  pm.collectionVariables.unset('c_i');",
+         "  pm.collectionVariables.unset('c_seen');",
+         "}"
+        ]
+       }
+      }
+     ]
+    },
+    {
+     "name": "B2. PREMIUM 503 via backend-service -> THIRD_PARTIES_DOWN (ZZZZZ)",
+     "request": {
+      "method": "GET",
+      "auth": {
+       "type": "basic",
+       "basic": [
+        {
+         "key": "username",
+         "value": "{{verifierUser}}"
+        },
+        {
+         "key": "password",
+         "value": "{{verifierPass}}"
+        }
+       ]
+      },
+      "url": {
+       "raw": "{{baseUrl}}/backend-service?verificationId={{vid}}&query=ZZZZZ",
+       "host": [
+        "{{baseUrl}}"
+       ],
+       "path": [
+        "backend-service"
+       ],
+       "query": [
+        {
+         "key": "verificationId",
+         "value": "{{vid}}"
+        },
+        {
+         "key": "query",
+         "value": "ZZZZZ"
+        }
+       ]
+      }
+     },
+     "event": [
+      {
+       "listen": "prerequest",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "if (pm.collectionVariables.get('p_i') === undefined) {",
+         "  pm.collectionVariables.set('p_i', 0);",
+         "  pm.collectionVariables.set('p_seen', false);",
+         "}",
+         "pm.collectionVariables.set('vid', pm.variables.replaceIn('{{$guid}}'));"
+        ]
+       }
+      },
+      {
+       "listen": "test",
+       "script": {
+        "type": "text/javascript",
+        "exec": [
+         "const i = Number(pm.collectionVariables.get('p_i')) + 1;",
+         "pm.collectionVariables.set('p_i', i);",
+         "const max = Math.max(Number(pm.collectionVariables.get('loopMax')) || 0, 80);",
+         "pm.test('status is 200 (backend-service handles 503 internally)', () => pm.response.to.have.status(200));",
+         "const body = pm.response.json();",
+         "const status = body && body.result && body.result.status;",
+         "if (status === 'THIRD_PARTIES_DOWN') {",
+         "  pm.collectionVariables.set('p_seen', true);",
+         "  pm.test('PREMIUM 503 -> THIRD_PARTIES_DOWN (premium-unavailable metric emitted)',",
+         "    () => pm.expect(status).to.eql('THIRD_PARTIES_DOWN'));",
+         "}",
+         "const seen = pm.collectionVariables.get('p_seen') === true;",
+         "if (!seen && i < max) {",
+         "  pm.execution.setNextRequest('B2. PREMIUM 503 via backend-service -> THIRD_PARTIES_DOWN (ZZZZZ)');",
+         "} else {",
+         "  pm.test(`a PREMIUM 503 was observed within ${i} call(s)`,",
+         "    () => pm.expect(seen, 'no premium 503 seen; raise loopMax or check app.failure.premium-probability').to.be.true);",
+         "  pm.collectionVariables.unset('p_i');",
+         "  pm.collectionVariables.unset('p_seen');",
+         "}"
+        ]
+       }
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

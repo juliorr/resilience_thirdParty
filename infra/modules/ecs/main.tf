@@ -61,7 +61,8 @@ resource "aws_ecs_task_definition" "this" {
         { name = "SPRING_PROFILES_ACTIVE", value = "aws" },
         { name = "VERIFICATION_TABLE_NAME", value = var.table_name },
         { name = "AWS_REGION", value = data.aws_region.current.name },
-        { name = "OAUTH2_ISSUER_URI", value = var.oauth2_issuer_uri }
+        { name = "OAUTH2_ISSUER_URI", value = var.oauth2_issuer_uri },
+        { name = "APP_THIRD_PARTY_BASE_URL", value = var.third_party_base_url }
       ]
       logConfiguration = {
         logDriver = "awslogs"

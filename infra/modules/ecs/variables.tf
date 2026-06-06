@@ -74,3 +74,8 @@ variable "oauth2_issuer_uri" {
   type        = string
   description = "OIDC issuer URI for JWT validation in the aws profile"
 }
+
+variable "third_party_base_url" {
+  type        = string
+  description = "Base URL of the external third-party provider API"
+}

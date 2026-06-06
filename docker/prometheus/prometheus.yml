@@ -7,3 +7,8 @@ scrape_configs:
     metrics_path: /actuator/prometheus
     static_configs:
       - targets: ['app:8080']
+
+  - job_name: third-party-service
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ['third-party:8081']

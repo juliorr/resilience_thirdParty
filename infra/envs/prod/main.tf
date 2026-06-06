@@ -60,4 +60,5 @@ module "ecs" {
   dynamodb_access_policy_arn = module.dynamodb.access_policy_arn
   log_group_name             = module.observability.log_group_name
   oauth2_issuer_uri          = var.oauth2_issuer_uri
+  third_party_base_url       = var.third_party_base_url
 }

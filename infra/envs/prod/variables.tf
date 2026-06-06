@@ -29,3 +29,8 @@ variable "oauth2_issuer_uri" {
   type        = string
   description = "OIDC issuer URI used by the aws Spring profile for JWT validation"
 }
+
+variable "third_party_base_url" {
+  type        = string
+  description = "Base URL of the external third-party provider API consumed by verification-service"
+}

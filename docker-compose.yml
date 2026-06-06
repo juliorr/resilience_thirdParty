@@ -1,12 +1,16 @@
 services:
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: verification-service/Dockerfile
     image: verification-service:latest
     container_name: verification-app
     depends_on:
       - dynamodb
+      - third-party
     environment:
       SPRING_PROFILES_ACTIVE: local
+      APP_THIRD_PARTY_BASE_URL: http://third-party:8081
       APP_DYNAMODB_ENDPOINT: http://dynamodb:8000
       APP_DYNAMODB_ACCESS_KEY: local
       APP_DYNAMODB_SECRET_KEY: local
@@ -15,12 +19,39 @@ services:
     ports:
       - "${APP_HOST_PORT:-8080}:8080"
 
+  third-party:
+    build:
+      context: .
+      dockerfile: third-party-service/Dockerfile
+    image: third-party-service:latest
+    container_name: verification-third-party
+    labels:
+      logging_app: third-party
+    ports:
+      - "${THIRD_PARTY_HOST_PORT:-8081}:8081"
+
   dynamodb:
     image: amazon/dynamodb-local:latest
     container_name: verification-dynamodb
-    command: ["-jar", "DynamoDBLocal.jar", "-inMemory", "-sharedDb"]
-    expose:
-      - "8000"
+    user: root
+    command: ["-jar", "DynamoDBLocal.jar", "-dbPath", "/home/dynamodblocal/data", "-sharedDb"]
+    volumes:
+      - dynamodb-data:/home/dynamodblocal/data
+    ports:
+      - "${DYNAMODB_HOST_PORT:-8000}:8000"
+
+  dynamodb-admin:
+    image: aaronshaf/dynamodb-admin:latest
+    container_name: verification-dynamodb-admin
+    depends_on:
+      - dynamodb
+    environment:
+      DYNAMO_ENDPOINT: http://dynamodb:8000
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: local
+      AWS_SECRET_ACCESS_KEY: local
+    ports:
+      - "${DYNAMODB_ADMIN_HOST_PORT:-8002}:8001"
 
   prometheus:
     image: prom/prometheus:latest
@@ -66,3 +97,6 @@ services:
     volumes:
       - ./docker/promtail/promtail-config.yml:/etc/promtail/promtail-config.yml:ro
       - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  dynamodb-data:

@@ -4,7 +4,7 @@ RUN_MVN = docker run --rm -v "$(PWD)":/app -v $(M2_VOLUME):/root/.m2 -w /app $(M
 
 .DEFAULT_GOAL := help
 
-.PHONY: help build run test it-test verify lint lint-check docker-build up down logs clean
+.PHONY: help build run test it-test verify coverage lint lint-check docker-build up down down-volumes logs clean hosts-setup hosts-remove
 
 help: ## List available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -30,21 +30,43 @@ it-test: $(M2_VOLUME) ## Run integration tests (Failsafe + Testcontainers via di
 verify: $(M2_VOLUME) ## Run unit + integration tests + Spotless check (via dind)
 	./scripts/run-tests-in-docker.sh verify
 
-docker-build: ## Build the application Docker image
-	docker build -t verification-service:latest .
+coverage: $(M2_VOLUME) ## Generate JaCoCo coverage reports (unit + integration, via dind)
+	./scripts/run-tests-in-docker.sh verify
+	@echo "Coverage reports:"
+	@echo "  verification-service/target/site/jacoco/index.html (unit)"
+	@echo "  verification-service/target/site/jacoco-it/index.html (integration)"
+	@echo "  third-party-service/target/site/jacoco/index.html (unit)"
+	@echo "  third-party-service/target/site/jacoco-it/index.html (integration)"
 
-up: ## Start the full stack (app, dynamodb, prometheus, grafana, loki, promtail)
+docker-build: ## Build both application Docker images (verification + third-party)
+	docker build -f verification-service/Dockerfile -t verification-service:latest .
+	docker build -f third-party-service/Dockerfile -t third-party-service:latest .
+
+up: ## Start the full stack (app, third-party, dynamodb, prometheus, grafana, loki, promtail)
 	docker compose up -d --build
 
-run: ## Start only the app and DynamoDB Local
-	docker compose up -d --build app dynamodb
+run: ## Start only the app, third-party provider and DynamoDB Local
+	docker compose up -d --build app third-party dynamodb
 
-down: ## Stop and remove the stack and volumes
+down: ## Stop and remove the stack, keeping data volumes (DynamoDB data persists)
+	docker compose down
+
+down-volumes: ## Stop the stack and delete data volumes (wipes DynamoDB data)
 	docker compose down -v
 
 logs: ## Tail logs of all stack services
 	docker compose logs -f
 
-clean: $(M2_VOLUME) ## Remove build output and stop the stack
+clean: $(M2_VOLUME) ## Remove build output and stop the stack, keeping data volumes
 	$(RUN_MVN) clean
-	docker compose down -v || true
+	docker compose down || true
+
+hosts-setup: ## Add '127.0.0.1 app' to /etc/hosts so the Prometheus /targets link opens from the host (needs sudo)
+	@grep -qE '^127\.0\.0\.1[[:space:]]+app$$' /etc/hosts \
+		&& echo "/etc/hosts already maps 'app' -> 127.0.0.1" \
+		|| (echo "127.0.0.1 app" | sudo tee -a /etc/hosts >/dev/null \
+			&& echo "Added '127.0.0.1 app' to /etc/hosts")
+
+hosts-remove: ## Remove the '127.0.0.1 app' /etc/hosts entry added by hosts-setup (needs sudo)
+	@sudo sed -i '' '/^127\.0\.0\.1[[:space:]]\{1,\}app$$/d' /etc/hosts \
+		&& echo "Removed '127.0.0.1 app' from /etc/hosts (if present)"

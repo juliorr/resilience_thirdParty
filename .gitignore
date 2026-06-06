@@ -27,6 +27,9 @@ buildNumber.properties
 .DS_Store
 Thumbs.db
 
+# Assignment
+.doc/
+
 # Logs
 *.log
 logs/

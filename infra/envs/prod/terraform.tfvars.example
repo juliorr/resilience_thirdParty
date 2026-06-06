@@ -1,5 +1,6 @@
 region            = "us-east-1"
 table_name        = "verification"
 app_port          = 8080
-oauth2_issuer_uri = "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_example"
+oauth2_issuer_uri    = "https://cognito-idp.us-east-1.amazonaws.com/us-east-1_example"
+third_party_base_url = "https://provider.example.com"
 # image           = "<account>.dkr.ecr.us-east-1.amazonaws.com/verification:<sha>"
