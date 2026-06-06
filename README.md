@@ -86,6 +86,7 @@ Stop everything: `make down`.
 | `make lint` / `make lint-check` | Apply / verify Spotless (Palantir Java Format) |
 | `make docker-build` | Build the application image |
 | `make up` / `make down` / `make logs` | Manage the full stack |
+| `make newman` | Run the Postman collection with Newman in Docker (needs the stack up: `make up`) |
 
 Tests run **two ways** (spec requirement): (a) inside the build via `mvn verify`, and
 (b) standalone via `make test` / `make it-test` / `make verify`.
