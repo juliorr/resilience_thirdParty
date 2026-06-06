@@ -4,7 +4,7 @@ RUN_MVN = docker run --rm -v "$(PWD)":/app -v $(M2_VOLUME):/root/.m2 -w /app $(M
 
 .DEFAULT_GOAL := help
 
-.PHONY: help build run test it-test verify coverage lint lint-check docker-build up down down-volumes logs clean hosts-setup hosts-remove
+.PHONY: help build run test it-test verify coverage lint lint-check newman docker-build up down down-volumes logs clean hosts-setup hosts-remove
 
 help: ## List available targets
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -37,6 +37,9 @@ coverage: $(M2_VOLUME) ## Generate JaCoCo coverage reports (unit + integration, 
 	@echo "  verification-service/target/site/jacoco-it/index.html (integration)"
 	@echo "  third-party-service/target/site/jacoco/index.html (unit)"
 	@echo "  third-party-service/target/site/jacoco-it/index.html (integration)"
+
+newman: ## Run the Postman collection headless with Newman (Docker); assumes the stack is already up (make up)
+	docker compose run --rm --no-deps newman
 
 docker-build: ## Build both application Docker images (verification + third-party)
 	docker build -f verification-service/Dockerfile -t verification-service:latest .

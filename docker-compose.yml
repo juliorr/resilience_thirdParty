@@ -88,6 +88,26 @@ services:
     expose:
       - "3100"
 
+  newman:
+    image: postman/newman:alpine
+    container_name: verification-newman
+    profiles: ["test"]
+    depends_on:
+      - app
+      - third-party
+    volumes:
+      - ./postman:/etc/newman:ro
+    entrypoint: ["newman"]
+    command:
+      - run
+      - incode-verification.postman_collection.json
+      - -e
+      - incode-local.postman_environment.json
+      - --env-var
+      - baseUrl=http://app:8080
+      - --env-var
+      - thirdPartyUrl=http://third-party:8081
+
   promtail:
     image: grafana/promtail:3.0.0
     container_name: verification-promtail

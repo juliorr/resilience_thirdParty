@@ -31,10 +31,17 @@ make up
 
 ## Run headless with Newman
 
+No need to install Node or Newman on the host — the collection runs inside the official
+`postman/newman` image, on the compose network. With the stack already up (`make up`):
+
 ```bash
-newman run postman/incode-verification.postman_collection.json \
-  -e postman/incode-local.postman_environment.json
+make newman
 ```
+
+The Newman container reaches the services by their compose names (`app:8080`,
+`third-party:8081`), overriding the `baseUrl` / `thirdPartyUrl` of the environment via
+`--env-var` (the Basic-auth credentials are reused as-is). The `newman` service uses the
+`test` profile, so it never starts with `make up` / `make run`.
 
 ## What the collection covers
 
