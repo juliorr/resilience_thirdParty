@@ -66,6 +66,7 @@ public class VerificationService {
         }
 
         metrics.fallback();
+        log.info("FREE returned no matches, falling back to PREMIUM");
         ThirdPartyResult premium = premiumClient.search(query);
         if (premium.available()) {
             return new Resolution(Source.PREMIUM, select(premium.companies()));
@@ -73,6 +74,7 @@ public class VerificationService {
         if (free.available()) {
             return new Resolution(Source.FREE, select(free.companies()));
         }
+        log.warn("Both providers unavailable, returning ThirdPartiesDown");
         return new Resolution(null, new ThirdPartiesDown());
     }
 
