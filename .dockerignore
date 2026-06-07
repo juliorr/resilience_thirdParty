@@ -1,4 +1,5 @@
 target/
+**/target/
 .git/
 .idea/
 *.iml
@@ -6,3 +7,7 @@ target/
 doc/
 infra/
 *.md
+.env*
+*.log
+.cache/
+coverage/
