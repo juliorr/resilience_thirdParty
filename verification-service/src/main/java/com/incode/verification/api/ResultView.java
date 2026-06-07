@@ -4,6 +4,7 @@ import com.incode.verification.domain.VerificationResult;
 import com.incode.verification.domain.VerificationResult.Match;
 import com.incode.verification.domain.VerificationResult.NoResults;
 import com.incode.verification.domain.VerificationResult.ThirdPartiesDown;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 public record ResultView(Object result) {
 
@@ -15,5 +16,11 @@ public record ResultView(Object result) {
         };
     }
 
-    public record StatusView(String status) {}
+    @Schema(name = "StatusView", description = "Estado devuelto cuando no hay coincidencia")
+    public record StatusView(
+            @Schema(
+                            description = "Motivo por el que no hay match",
+                            example = "NO_RESULTS",
+                            allowableValues = {"NO_RESULTS", "THIRD_PARTIES_DOWN"})
+                    String status) {}
 }
