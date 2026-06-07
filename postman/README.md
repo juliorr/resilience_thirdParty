@@ -49,7 +49,7 @@ The Newman container reaches the services by their compose names (`app:8080`,
 |--------|---------|
 | FREE third-party | `GET /free-third-party` (`:8081`) — snake_case payload, public, asserts field names |
 | PREMIUM third-party | `GET /premium-third-party` (`:8081`) — camelCase payload (incl. `companyFullAddress`), shows PREMIUM is the superset |
-| Backend service (happy paths) | `GET /backend-service` — match, FREE→PREMIUM fallback, `otherResults`, NO_RESULTS |
+| Backend service (happy paths) | `GET /backend-service` — match, FREE→PREMIUM fallback, `result.otherResults`, NO_RESULTS |
 | Create → retrieve → duplicate (flow) | create a verification, fetch it by id, then prove a reused id returns 409 |
 | Auth & validation errors | 401 (no creds), 403 (wrong role), 404 (unknown id), 400 (invalid GUID / missing query) |
 | 503 & fallback (deep) | explicit coverage of the simulated 503s and the FREE→PREMIUM fallback (see below) |
@@ -87,7 +87,7 @@ The third-party 503s are random (FREE ~40%, PREMIUM ~10%) and cannot be forced f
 |---------|---------|
 | `CJQUNXGW` | active in **both** files → match regardless of source |
 | `LDL93LOZ` | exists **only** in PREMIUM (active) → forces the FREE→PREMIUM fallback |
-| `Q` | matches several active CINs in FREE → first match + non-empty `otherResults` |
+| `Q` | matches several active CINs in FREE → first match + non-empty `result.otherResults` |
 | `0ANW1LCD` | present in both but inactive → `NO_RESULTS` |
 | `ZZZZZ` | matches nothing → `NO_RESULTS` / empty arrays |
 | `FI7` | FREE returns one (`FI75L0O9`), PREMIUM returns two (`FI75L0O9`, `FI7RM46P`) — superset demo |
