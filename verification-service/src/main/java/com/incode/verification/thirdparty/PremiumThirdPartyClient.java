@@ -8,8 +8,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class PremiumThirdPartyClient implements ThirdPartyClient {
 
-    private static final String RESILIENCE_NAME = "premium";
-
     private final ThirdPartyApi api;
     private final ThirdPartyCall call;
 
@@ -25,7 +23,7 @@ public class PremiumThirdPartyClient implements ThirdPartyClient {
 
     @Override
     public ThirdPartyResult search(String query) {
-        return call.execute(Source.PREMIUM, RESILIENCE_NAME, false, () -> {
+        return call.execute(Source.PREMIUM, () -> {
             List<PremiumCompany> body = api.searchPremium(query);
             List<Company> companies = body == null
                     ? List.of()

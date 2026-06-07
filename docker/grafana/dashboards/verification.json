@@ -26,15 +26,15 @@
     },
     {
       "id": 13,
-      "title": "% Third-party calls/s by source & outcome",
+      "title": "Unavailable rate by source (expected FREE 40% / PREMIUM 10%)",
       "type": "timeseries",
       "datasource": { "type": "prometheus", "uid": "prometheus" },
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
       "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
       "targets": [
         {
-          "expr": "sum by (source, outcome) (rate(thirdparty_calls_total[1m])) / ignoring(source, outcome) group_left sum(rate(thirdparty_calls_total[1m]))",
-          "legendFormat": "{{source}} {{outcome}}",
+          "expr": "sum by (source) (rate(thirdparty_calls_total{outcome=\"unavailable\"}[5m])) / sum by (source) (rate(thirdparty_calls_total[5m]))",
+          "legendFormat": "{{source}}",
           "refId": "A"
         }
       ]
