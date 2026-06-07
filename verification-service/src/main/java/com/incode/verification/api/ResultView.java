@@ -16,10 +16,10 @@ public record ResultView(Object result) {
         };
     }
 
-    @Schema(name = "StatusView", description = "Estado devuelto cuando no hay coincidencia")
+    @Schema(name = "StatusView", description = "Status returned when there is no match")
     public record StatusView(
             @Schema(
-                            description = "Motivo por el que no hay match",
+                            description = "Reason why there is no match",
                             example = "NO_RESULTS",
                             allowableValues = {"NO_RESULTS", "THIRD_PARTIES_DOWN"})
                     String status) {}
