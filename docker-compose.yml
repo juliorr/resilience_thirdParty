@@ -6,8 +6,10 @@ services:
     image: verification-service:latest
     container_name: verification-app
     depends_on:
-      - dynamodb
-      - third-party
+      dynamodb:
+        condition: service_healthy
+      third-party:
+        condition: service_healthy
     environment:
       SPRING_PROFILES_ACTIVE: local
       APP_THIRD_PARTY_BASE_URL: http://third-party:8081
@@ -18,6 +20,10 @@ services:
       logging_app: verification
     ports:
       - "${APP_HOST_PORT:-8080}:8080"
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 512M }
+        reservations: { cpus: "0.5", memory: 256M }
 
   third-party:
     build:
@@ -29,6 +35,10 @@ services:
       logging_app: third-party
     ports:
       - "${THIRD_PARTY_HOST_PORT:-8081}:8081"
+    deploy:
+      resources:
+        limits: { cpus: "1.0", memory: 512M }
+        reservations: { cpus: "0.5", memory: 256M }
 
   dynamodb:
     image: amazon/dynamodb-local:latest
@@ -39,12 +49,19 @@ services:
       - dynamodb-data:/home/dynamodblocal/data
     ports:
       - "${DYNAMODB_HOST_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:8000 >/dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
 
   dynamodb-admin:
     image: aaronshaf/dynamodb-admin:latest
     container_name: verification-dynamodb-admin
     depends_on:
-      - dynamodb
+      dynamodb:
+        condition: service_healthy
     environment:
       DYNAMO_ENDPOINT: http://dynamodb:8000
       AWS_REGION: us-east-1
@@ -72,7 +89,7 @@ services:
     environment:
       GF_AUTH_ANONYMOUS_ENABLED: "true"
       GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin}
     volumes:
       - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
       - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
@@ -93,8 +110,10 @@ services:
     container_name: verification-newman
     profiles: ["test"]
     depends_on:
-      - app
-      - third-party
+      app:
+        condition: service_healthy
+      third-party:
+        condition: service_healthy
     volumes:
       - ./postman:/etc/newman:ro
     entrypoint: ["newman"]
