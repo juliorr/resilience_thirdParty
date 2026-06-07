@@ -8,8 +8,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class FreeThirdPartyClient implements ThirdPartyClient {
 
-    private static final String RESILIENCE_NAME = "free";
-
     private final ThirdPartyApi api;
     private final ThirdPartyCall call;
 
@@ -25,7 +23,7 @@ public class FreeThirdPartyClient implements ThirdPartyClient {
 
     @Override
     public ThirdPartyResult search(String query) {
-        return call.execute(Source.FREE, RESILIENCE_NAME, true, () -> {
+        return call.execute(Source.FREE, () -> {
             List<FreeCompany> body = api.searchFree(query);
             List<Company> companies = body == null
                     ? List.of()
