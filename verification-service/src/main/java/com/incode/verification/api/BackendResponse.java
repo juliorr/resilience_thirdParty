@@ -7,12 +7,11 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record BackendResponse(
-        @Schema(description = "Identificador de la verificación persistida", example = "a1b2c3d4")
-                String verificationId,
-        @Schema(description = "Texto de la consulta original", example = "Acme") String query,
+        @Schema(description = "Identifier of the persisted verification", example = "a1b2c3d4") String verificationId,
+        @Schema(description = "Text of the original query", example = "Acme") String query,
         @Schema(
-                        description = "Resultado de la verificación. Siempre es un objeto con una de dos formas: "
-                                + "MatchView (coincidencia encontrada) o StatusView "
+                        description = "Verification result. Always an object with one of two shapes: "
+                                + "MatchView (match found) or StatusView "
                                 + "(NO_RESULTS / THIRD_PARTIES_DOWN).",
                         anyOf = {MatchView.class, StatusView.class})
                 Object result) {
