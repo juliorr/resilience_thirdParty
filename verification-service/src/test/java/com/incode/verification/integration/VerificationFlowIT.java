@@ -11,6 +11,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.tomakehurst.wiremock.WireMockServer;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.UUID;
@@ -44,6 +46,9 @@ class VerificationFlowIT {
     @Autowired
     private TestRestTemplate restTemplate;
 
+    @Autowired
+    private CircuitBreakerRegistry circuitBreakers;
+
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
         THIRD_PARTY.start();
@@ -65,6 +70,7 @@ class VerificationFlowIT {
     @BeforeEach
     void resetStubs() {
         THIRD_PARTY.resetAll();
+        circuitBreakers.getAllCircuitBreakers().forEach(CircuitBreaker::reset);
     }
 
     private void stubFree(int status, String body) {

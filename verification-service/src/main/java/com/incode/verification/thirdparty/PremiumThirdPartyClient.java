@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class PremiumThirdPartyClient implements ThirdPartyClient {
 
+    private static final String CIRCUIT_BREAKER_NAME = "premium";
+
     private final ThirdPartyApi api;
     private final ThirdPartyCall call;
 
@@ -23,7 +25,7 @@ public class PremiumThirdPartyClient implements ThirdPartyClient {
 
     @Override
     public ThirdPartyResult search(String query) {
-        return call.execute(Source.PREMIUM, () -> {
+        return call.execute(Source.PREMIUM, CIRCUIT_BREAKER_NAME, () -> {
             List<PremiumCompany> body = api.searchPremium(query);
             List<Company> companies = body == null
                     ? List.of()
