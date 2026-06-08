@@ -127,6 +127,24 @@ services:
       - --env-var
       - thirdPartyUrl=http://third-party:8081
 
+  traffic:
+    image: curlimages/curl:latest
+    container_name: verification-traffic
+    profiles: ["test"]
+    depends_on:
+      app:
+        condition: service_healthy
+      third-party:
+        condition: service_healthy
+    environment:
+      BASE_URL: http://app:8080
+      REQUESTS: ${REQUESTS:-200}
+      AUTH: verifier:verifier-pass
+      SLEEP_MS: ${SLEEP_MS:-0}
+    volumes:
+      - ./scripts:/scripts:ro
+    entrypoint: ["sh", "/scripts/generate-traffic.sh"]
+
   promtail:
     image: grafana/promtail:3.0.0
     container_name: verification-promtail
