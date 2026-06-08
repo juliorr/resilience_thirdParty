@@ -103,6 +103,17 @@ class VerificationServiceTest {
     }
 
     @Test
+    void returnsThirdPartiesDownWhenFreeIsEmptyAndPremiumUnavailable() {
+        when(freeClient.search("q")).thenReturn(ThirdPartyResult.available(List.of()));
+        when(premiumClient.search("q")).thenReturn(ThirdPartyResult.unavailable());
+
+        VerificationRecord record = service.verify(ID, "q");
+
+        assertThat(record.result()).isInstanceOf(ThirdPartiesDown.class);
+        assertThat(record.source()).isNull();
+    }
+
+    @Test
     void returnsNoResultsWhenFreeReturnsOnlyInactiveAndDoesNotFallBack() {
         when(freeClient.search("q")).thenReturn(ThirdPartyResult.available(List.of(inactive("I1"))));
 

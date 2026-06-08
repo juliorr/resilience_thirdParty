@@ -164,6 +164,18 @@ class VerificationFlowIT {
     }
 
     @Test
+    void reportsThirdPartiesDownWhenFreeIsEmptyAndPremiumUnavailable() throws IOException {
+        stubFree(200, "[]");
+        stubPremium(503, "");
+        String id = UUID.randomUUID().toString();
+
+        verify("verifier", "verifier-pass", id, "CJ");
+
+        JsonNode stored = retrieve(id);
+        assertThat(stored.get("result").get("status").asText()).isEqualTo("THIRD_PARTIES_DOWN");
+    }
+
+    @Test
     void rejectsDuplicateVerificationId() {
         stubFree(200, freeCompany("CJQUNXGW"));
         String id = UUID.randomUUID().toString();
