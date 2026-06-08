@@ -125,6 +125,17 @@ class VerificationServiceTest {
     }
 
     @Test
+    void returnsNoResultsWhenBothProvidersReturnEmpty() {
+        when(freeClient.search("q")).thenReturn(ThirdPartyResult.available(List.of()));
+        when(premiumClient.search("q")).thenReturn(ThirdPartyResult.available(List.of()));
+
+        VerificationRecord record = service.verify(ID, "q");
+
+        assertThat(record.result()).isInstanceOf(NoResults.class);
+        assertThat(record.source()).isEqualTo(Source.PREMIUM);
+    }
+
+    @Test
     void selectsFirstActiveAndExcludesInactiveAndCollectsOtherResults() {
         when(freeClient.search("q"))
                 .thenReturn(ThirdPartyResult.available(
