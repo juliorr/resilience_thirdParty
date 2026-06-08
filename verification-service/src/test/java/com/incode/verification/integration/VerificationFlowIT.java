@@ -275,9 +275,9 @@ class VerificationFlowIT {
 
         verify("verifier", "verifier-pass", id, "Q");
 
-        JsonNode result = retrieve(id).get("result");
-        assertThat(result.get("cin").asText()).isEqualTo("CJQUNXGW");
-        JsonNode otherResults = result.get("otherResults");
+        JsonNode stored = retrieve(id);
+        assertThat(stored.get("result").get("cin").asText()).isEqualTo("CJQUNXGW");
+        JsonNode otherResults = stored.get("otherResults");
         assertThat(otherResults.isArray()).isTrue();
         assertThat(otherResults).isNotEmpty();
         otherResults.forEach(

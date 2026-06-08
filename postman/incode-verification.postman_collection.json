@@ -435,8 +435,8 @@
          "    pm.expect(body.result.status).to.eql('THIRD_PARTIES_DOWN');",
          "  } else {",
          "    pm.expect(body.result.active).to.be.true;",
-         "    pm.expect(body.result.otherResults).to.be.an('array').that.is.not.empty;",
-         "    pm.expect(body.result.otherResults.every(c => c.active)).to.be.true;",
+         "    pm.expect(body.otherResults).to.be.an('array').that.is.not.empty;",
+         "    pm.expect(body.otherResults.every(c => c.active)).to.be.true;",
          "  }",
          "});"
         ]
@@ -478,7 +478,7 @@
          "const body = pm.response.json();",
          "pm.test('inactive company -> NO_RESULTS (or THIRD_PARTIES_DOWN)', () => {",
          "  pm.expect(body.result.status).to.be.oneOf(['NO_RESULTS', 'THIRD_PARTIES_DOWN']);",
-         "  pm.expect(body.result.otherResults).to.satisfy(o => o === undefined || o === null);",
+         "  pm.expect(body.otherResults).to.satisfy(o => o === undefined || o === null);",
          "});"
         ]
        }
